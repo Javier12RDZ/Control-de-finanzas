@@ -1,43 +1,37 @@
 import { useState } from 'react';
 
 function AddAccountForm({ onAddAccount }) {
-  const [name, setName] = useState('');
-  const [bank, setBank] = useState('');
-  const [type, setType] = useState('Débito');
-  const [balance, setBalance] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [bankName, setBankName] = useState(''); // Estado para el banco
+  const [initialBalance, setInitialBalance] = useState('');
+  const [accountType, setAccountType] = useState('Cuenta de Ahorro/Débito');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name || !bank || !balance) {
-      alert('Por favor, completa todos los campos.');
-      return;
-    }
-    
+    if (!accountName.trim() || !initialBalance.trim()) return;
+
     const newAccount = {
       id: Date.now(),
-      name,
-      bank,
-      type,
-      // Guardamos el valor como número
-      balance: parseFloat(balance),
-      // Si es de débito, el balance actual es el mismo que el inicial.
-      // Si es de crédito, el balance actual empieza en 0 (no hemos gastado nada).
-      currentBalance: type === 'Débito' ? parseFloat(balance) : 0,
+      name: accountName,
+      bank: bankName, // Añadir banco al objeto
+      type: accountType,
+      balance: parseFloat(initialBalance),
+      currentBalance: accountType === 'Tarjeta de Crédito' ? 0 : parseFloat(initialBalance),
     };
 
     onAddAccount(newAccount);
 
     // Limpiar formulario
-    setName('');
-    setBank('');
-    setType('Débito');
-    setBalance('');
+    setAccountName('');
+    setBankName('');
+    setInitialBalance('');
+    setAccountType('Cuenta de Ahorro/Débito');
   };
 
   return (
     <div className="card mb-4">
       <div className="card-body">
-        <h2 className="card-title">Agregar Nueva Cuenta</h2>
+        <h3 className="card-title">Agregar Nueva Cuenta</h3>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label htmlFor="accountName" className="form-label">Nombre de la Cuenta</label>
@@ -45,52 +39,49 @@ function AddAccountForm({ onAddAccount }) {
               type="text"
               className="form-control"
               id="accountName"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Ahorros, Nómina"
+              value={accountName}
+              onChange={(e) => setAccountName(e.target.value)}
+              placeholder="Ej: Nómina, Ahorros, TC Oro"
               required
             />
           </div>
-          <div className="mb-3">
-            <label htmlFor="bankName" className="form-label">Banco</label>
+           <div className="mb-3">
+            <label htmlFor="bankName" className="form-label">Banco (Opcional)</label>
             <input
               type="text"
               className="form-control"
               id="bankName"
-              value={bank}
-              onChange={(e) => setBank(e.target.value)}
+              value={bankName}
+              onChange={(e) => setBankName(e.target.value)}
               placeholder="Ej: BBVA, Santander"
-              required
             />
           </div>
-          <div className="row">
-            <div className="col-md-6 mb-3">
-              <label htmlFor="accountType" className="form-label">Tipo de Cuenta</label>
-              <select
-                className="form-select"
-                id="accountType"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-              >
-                <option value="Débito">Débito</option>
-                <option value="Crédito">Crédito</option>
-              </select>
-            </div>
-            <div className="col-md-6 mb-3">
-              <label htmlFor="balance" className="form-label">
-                {type === 'Débito' ? 'Balance Inicial' : 'Límite de Crédito'}
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                className="form-control"
-                id="balance"
-                value={balance}
-                onChange={(e) => setBalance(e.target.value)}
-                placeholder="Ej: 5000"
-                required
-              />
-            </div>
+          <div className="mb-3">
+            <label htmlFor="accountType" className="form-label">Tipo de Cuenta</label>
+            <select
+              className="form-select"
+              id="accountType"
+              value={accountType}
+              onChange={(e) => setAccountType(e.target.value)}
+            >
+              <option>Cuenta de Ahorro/Débito</option>
+              <option>Efectivo</option>
+              <option>Tarjeta de Crédito</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label htmlFor="initialBalance" className="form-label">
+              {accountType === 'Tarjeta de Crédito' ? 'Límite de Crédito' : 'Balance Inicial'}
+            </label>
+            <input
+              type="number"
+              className="form-control"
+              id="initialBalance"
+              value={initialBalance}
+              onChange={(e) => setInitialBalance(e.target.value)}
+              placeholder="0.00"
+              required
+            />
           </div>
           <button type="submit" className="btn btn-primary">Agregar Cuenta</button>
         </form>

@@ -1,62 +1,80 @@
 import { useState } from 'react';
 
-function AddExpenseForm({ accounts, onAddTransaction }) {
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [accountId, setAccountId] = useState('');
+// Lista de categorías predefinidas
+const categories = [
+  'Comida',
+  'Transporte',
+  'Vivienda',
+  'Salud',
+  'Entretenimiento',
+  'Ropa y Accesorios',
+  'Educación',
+  'Deudas',
+  'Ahorro/Inversión',
+  'Otros',
+];
 
-  // Asegurarse de que el accountId tenga un valor por defecto si hay cuentas
-  if (!accountId && accounts.length > 0) {
-    setAccountId(accounts[0].id);
-  }
+function AddExpenseForm({ accounts, onAddTransaction }) {
+  const [selectedAccount, setSelectedAccount] = useState('');
+  const [expenseDescription, setExpenseDescription] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [category, setCategory] = useState(categories[0]); // Categoría por defecto
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10)); // Fecha por defecto: hoy
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!description || !amount || !accountId) {
-      alert('Por favor, completa todos los campos y selecciona una cuenta.');
+    if (!selectedAccount || !expenseDescription.trim() || !expenseAmount.trim()) {
+      alert('Por favor completa todos los campos');
       return;
     }
 
     const newTransaction = {
       id: Date.now(),
-      description,
-      amount: parseFloat(amount),
-      accountId: parseInt(accountId, 10),
-      date: new Date().toISOString(),
+      accountId: parseInt(selectedAccount),
+      description: expenseDescription,
+      amount: parseFloat(expenseAmount),
+      category: category,
+      date: date,
     };
 
     onAddTransaction(newTransaction);
 
     // Limpiar formulario
-    setDescription('');
-    setAmount('');
+    setExpenseDescription('');
+    setExpenseAmount('');
   };
 
-  if (accounts.length === 0) {
-    return (
-        <div className="card mb-4">
-            <div className="card-body">
-                <h2 className="card-title">Registrar Gasto</h2>
-                <p className='text-muted'>Primero debes agregar una cuenta para poder registrar un gasto.</p>
-            </div>
-        </div>
-    ); 
-  }
-
   return (
-    <div className="card mb-4">
+    <div className="card">
       <div className="card-body">
-        <h2 className="card-title">Registrar Gasto</h2>
+        <h3 className="card-title">Agregar Gasto</h3>
         <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label htmlFor="accountSelect" className="form-label">Seleccionar Cuenta</label>
+            <select
+              id="accountSelect"
+              className="form-select"
+              value={selectedAccount}
+              onChange={(e) => setSelectedAccount(e.target.value)}
+              required
+            >
+              <option value="" disabled>Elige una cuenta...</option>
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} ({acc.type})
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="mb-3">
             <label htmlFor="expenseDescription" className="form-label">Descripción</label>
             <input
               type="text"
               className="form-control"
               id="expenseDescription"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ej: Café, Transporte, Comida"
+              value={expenseDescription}
+              onChange={(e) => setExpenseDescription(e.target.value)}
+              placeholder="Ej: Café, pasaje, etc."
               required
             />
           </div>
@@ -65,33 +83,38 @@ function AddExpenseForm({ accounts, onAddTransaction }) {
               <label htmlFor="expenseAmount" className="form-label">Monto</label>
               <input
                 type="number"
-                step="0.01"
                 className="form-control"
                 id="expenseAmount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Ej: 50.00"
+                value={expenseAmount}
+                onChange={(e) => setExpenseAmount(e.target.value)}
+                placeholder="0.00"
                 required
               />
             </div>
             <div className="col-md-6 mb-3">
-              <label htmlFor="expenseAccount" className="form-label">Cuenta</label>
+              <label htmlFor="categorySelect" className="form-label">Categoría</label>
               <select
+                id="categorySelect"
                 className="form-select"
-                id="expenseAccount"
-                value={accountId}
-                onChange={(e) => setAccountId(e.target.value)}
-                required
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
               >
-                {accounts.map(account => (
-                  <option key={account.id} value={account.id}>
-                    {account.name} ({account.bank})
-                  </option>
-                ))}
+                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
           </div>
-          <button type="submit" className="btn btn-success">Agregar Gasto</button>
+           <div className="mb-3">
+              <label htmlFor="expenseDate" className="form-label">Fecha</label>
+              <input
+                type="date"
+                className="form-control"
+                id="expenseDate"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+          <button type="submit" className="btn btn-danger">Agregar Gasto</button>
         </form>
       </div>
     </div>
