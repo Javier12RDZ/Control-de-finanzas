@@ -2,9 +2,10 @@ import { useState } from 'react';
 
 function AddAccountForm({ onAddAccount }) {
   const [accountName, setAccountName] = useState('');
-  const [bankName, setBankName] = useState(''); // Estado para el banco
+  const [bankName, setBankName] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const [accountType, setAccountType] = useState('Cuenta de Ahorro/Débito');
+  const [currency, setCurrency] = useState('MXN'); // Estado para la moneda
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -17,8 +18,8 @@ function AddAccountForm({ onAddAccount }) {
       name: accountName,
       bank: bankName,
       type: accountType,
-      balance: initial, // Límite para TC, Monto total para Préstamo, Saldo inicial para Débito
-      // El balance actual es el saldo (Débito), el gasto (TC) o la deuda pendiente (Préstamo)
+      currency: currency, // Añadir moneda al objeto de la cuenta
+      balance: initial, 
       currentBalance: accountType === 'Préstamo Personal' ? initial : (accountType === 'Tarjeta de Crédito' ? 0 : initial),
     };
 
@@ -29,6 +30,7 @@ function AddAccountForm({ onAddAccount }) {
     setBankName('');
     setInitialBalance('');
     setAccountType('Cuenta de Ahorro/Débito');
+    setCurrency('MXN'); // Resetear moneda
   };
 
   return (
@@ -59,19 +61,37 @@ function AddAccountForm({ onAddAccount }) {
               placeholder="Ej: BBVA, Santander"
             />
           </div>
-          <div className="mb-3">
-            <label htmlFor="accountType" className="form-label">Tipo de Cuenta</label>
-            <select
-              className="form-select"
-              id="accountType"
-              value={accountType}
-              onChange={(e) => setAccountType(e.target.value)}
-            >
-              <option>Cuenta de Ahorro/Débito</option>
-              <option>Efectivo</option>
-              <option>Tarjeta de Crédito</option>
-              <option>Préstamo Personal</option>
-            </select>
+          <div className="row">
+            <div className="col-md-6">
+              <div className="mb-3">
+                <label htmlFor="accountType" className="form-label">Tipo de Cuenta</label>
+                <select
+                  className="form-select"
+                  id="accountType"
+                  value={accountType}
+                  onChange={(e) => setAccountType(e.target.value)}
+                >
+                  <option>Cuenta de Ahorro/Débito</option>
+                  <option>Efectivo</option>
+                  <option>Tarjeta de Crédito</option>
+                  <option>Préstamo Personal</option>
+                </select>
+              </div>
+            </div>
+            <div className="col-md-6">
+              <div className="mb-3">
+                <label htmlFor="currency" className="form-label">Moneda</label>
+                <select
+                  className="form-select"
+                  id="currency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                >
+                  <option value="MXN">Pesos (MXN)</option>
+                  <option value="USD">Dólares (USD)</option>
+                </select>
+              </div>
+            </div>
           </div>
           <div className="mb-3">
             <label htmlFor="initialBalance" className="form-label">

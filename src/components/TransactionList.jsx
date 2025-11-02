@@ -1,13 +1,17 @@
 import React from 'react';
 
 function TransactionList({ transactions, accounts, onEdit, onDelete }) {
-  const getAccountName = (accountId) => {
-    const account = accounts.find(acc => acc.id === accountId);
-    return account ? account.name : 'Cuenta no encontrada';
+  const getAccountDetails = (accountId) => {
+    return accounts.find(acc => acc.id === accountId);
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  const formatCurrency = (amount, currency = 'MXN') => {
+    const currencyCode = currency || 'MXN';
+    try {
+      return new Intl.NumberFormat('es-MX', { style: 'currency', currency: currencyCode }).format(amount);
+    } catch (e) {
+      return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
+    }
   };
 
   const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -20,28 +24,38 @@ function TransactionList({ transactions, accounts, onEdit, onDelete }) {
           {sortedTransactions.length === 0 ? (
             <li className="list-group-item">No hay transacciones registradas.</li>
           ) : (
-            sortedTransactions.map(tx => (
-              <li key={tx.id} className="list-group-item">
-                <div className="d-flex justify-content-between">
-                  <div>
-                    <h6 className="my-0">{tx.description}</h6>
-                    <small className="text-muted">{tx.category} | {getAccountName(tx.accountId)}</small>
+            sortedTransactions.map(tx => {
+              const account = getAccountDetails(tx.accountId);
+              const accountName = account ? `${account.name} (${account.currency})` : 'Cuenta no encontrada';
+
+              return (
+                <li key={tx.id} className="list-group-item">
+                  <div className="d-flex justify-content-between">
+                    <div>
+                      <h6 className="my-0">{tx.description}</h6>
+                      <small className="text-muted">{tx.category} | {accountName}</small>
+                      {tx.conversionDetails && (
+                        <small className="d-block text-info fw-bold">
+                          {`Pagado: ${formatCurrency(tx.conversionDetails.fromAmount, tx.conversionDetails.fromCurrency)} @ ${tx.conversionDetails.exchangeRate}`}
+                        </small>
+                      )}
+                    </div>
+                    <div className="text-end">
+                      {tx.type === 'income' ? (
+                          <span className="text-success fw-bold">{formatCurrency(tx.amount, account?.currency)}</span>
+                      ) : (
+                          <span className="text-danger fw-bold">{formatCurrency(tx.amount, account?.currency)}</span>
+                      )}
+                      <small className="d-block text-muted">{new Date(tx.date).toLocaleDateString()}</small>
+                    </div>
                   </div>
-                  <div className="text-end">
-                     {tx.type === 'income' ? (
-                        <span className="text-success fw-bold">{formatCurrency(tx.amount)}</span>
-                     ) : (
-                        <span className="text-danger fw-bold">{formatCurrency(tx.amount)}</span>
-                     )}
-                     <small className="d-block text-muted">{new Date(tx.date).toLocaleDateString()}</small>
+                  <div className="mt-2">
+                    <button className="btn btn-sm btn-outline-primary me-2" onClick={() => onEdit(tx)}>Editar</button>
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(tx.id)}>Eliminar</button>
                   </div>
-                </div>
-                <div className="mt-2">
-                  <button className="btn btn-sm btn-outline-primary me-2" onClick={() => onEdit(tx)}>Editar</button>
-                  <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(tx.id)}>Eliminar</button>
-                </div>
-              </li>
-            ))
+                </li>
+              );
+            })
           )}
         </ul>
       </div>
