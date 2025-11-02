@@ -6,7 +6,7 @@ function AddTransferForm({ accounts, onAddTransfer }) {
   const [amount, setAmount] = useState('');
 
   const debitAccounts = accounts.filter(acc => acc.type === 'Cuenta de Ahorro/Débito' || acc.type === 'Efectivo');
-  const creditAccounts = accounts.filter(acc => acc.type === 'Tarjeta de Crédito');
+  const creditAccounts = accounts.filter(acc => acc.type === 'Tarjeta de Crédito' || acc.type === 'Préstamo Personal');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -37,7 +37,7 @@ function AddTransferForm({ accounts, onAddTransfer }) {
           <div className="mb-3">
             <label htmlFor="toAccount" className="form-label">Hacia la cuenta (Destino)</label>
             <select id="toAccount" className="form-select" value={toAccountId} onChange={(e) => setToAccountId(e.target.value)} required>
-              <option value="" disabled>Selecciona una tarjeta de crédito</option>
+              <option value="" disabled>Selecciona una deuda (Tarjeta o Préstamo)</option>
               {creditAccounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
             </select>
           </div>

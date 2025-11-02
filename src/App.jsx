@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import './App.css';
 import AccountList from './components/AccountList';
 import AddAccountForm from './components/AddAccountForm';
@@ -9,6 +9,9 @@ import EditTransactionModal from './components/EditTransactionModal';
 import SummaryDashboard from './components/SummaryDashboard';
 import EditAccountModal from './components/EditAccountModal';
 import AddTransferForm from './components/AddTransferForm';
+import AddIncomeForm from './components/AddIncomeForm';
+import Header from './components/Header';
+import SideMenu from './components/SideMenu';
 
 function App() {
   // Estados para manejar las cuentas y las transacciones
@@ -20,6 +23,8 @@ function App() {
 
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [currentAccount, setCurrentAccount] = useState(null);
+
+  const [dateFilter, setDateFilter] = useState({ start: null, end: null });
 
   // Cargar datos desde localStorage al iniciar
   useEffect(() => {
@@ -195,13 +200,47 @@ function App() {
     }
   };
 
+  const handleAddIncome = (income) => {
+    // Sumar al balance de la cuenta
+    setAccounts(accounts.map(acc => 
+      acc.id === income.accountId 
+        ? { ...acc, currentBalance: acc.currentBalance + income.amount } 
+        : acc
+    ));
+
+    // Registrar la transacción (con monto negativo para diferenciarlo o un tipo)
+    const newTransaction = {
+      id: Date.now(),
+      accountId: income.accountId,
+      description: income.description,
+      amount: income.amount,
+      category: 'Ingreso',
+      date: income.date,
+      type: 'income' // Tipo especial para ingresos
+    };
+    setTransactions([...transactions, newTransaction]);
+  };
+
+  const handleApplyFilter = (start, end) => {
+    setDateFilter({ start, end });
+  };
+
+  const handleClearFilter = () => {
+    setDateFilter({ start: null, end: null });
+  };
+
+  const displayedTransactions = useMemo(() => {
+    if (dateFilter.start && dateFilter.end) {
+      return transactions.filter(tx => tx.date >= dateFilter.start && tx.date <= dateFilter.end);
+    }
+    return transactions;
+  }, [transactions, dateFilter]);
+
 
   return (
     <div className="container mt-4">
-      <header className="text-center mb-4">
-        <h1>Control de Finanzas Personales</h1>
-        <p className="lead">Gestiona tus cuentas y gastos de forma sencilla.</p>
-      </header>
+      <Header />
+      <SideMenu onApplyFilter={handleApplyFilter} onClearFilter={handleClearFilter} />
 
       <div className="row">
         <div className="col-lg-5">
@@ -211,14 +250,16 @@ function App() {
           <AddExpenseForm accounts={accounts} onAddTransaction={handleAddTransaction} />
           {/* Sección para Pagos y Transferencias */}
           <AddTransferForm accounts={accounts} onAddTransfer={handleAddTransfer} />
+          {/* Sección para Registrar Ingresos */}
+          <AddIncomeForm accounts={accounts} onAddIncome={handleAddIncome} />
         </div>
         <div className="col-lg-7">
           {/* Panel de Resumen */}
-          <SummaryDashboard transactions={transactions} accounts={accounts} />
+          <SummaryDashboard transactions={transactions} accounts={accounts} dateFilter={dateFilter} />
           {/* Sección de Resumen de Cuentas */}
           <AccountList accounts={accounts} onEdit={handleEditAccountClick} />
           {/* Sección de Historial de Transacciones */}
-          <TransactionList transactions={transactions} accounts={accounts} onEdit={handleEditClick} onDelete={handleDeleteTransaction} />
+          <TransactionList transactions={displayedTransactions} accounts={accounts} onEdit={handleEditClick} onDelete={handleDeleteTransaction} />
         </div>
       </div>
 

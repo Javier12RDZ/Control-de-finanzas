@@ -10,13 +10,16 @@ function AddAccountForm({ onAddAccount }) {
     e.preventDefault();
     if (!accountName.trim() || !initialBalance.trim()) return;
 
+    const initial = parseFloat(initialBalance);
+
     const newAccount = {
       id: Date.now(),
       name: accountName,
-      bank: bankName, // Añadir banco al objeto
+      bank: bankName,
       type: accountType,
-      balance: parseFloat(initialBalance),
-      currentBalance: accountType === 'Tarjeta de Crédito' ? 0 : parseFloat(initialBalance),
+      balance: initial, // Límite para TC, Monto total para Préstamo, Saldo inicial para Débito
+      // El balance actual es el saldo (Débito), el gasto (TC) o la deuda pendiente (Préstamo)
+      currentBalance: accountType === 'Préstamo Personal' ? initial : (accountType === 'Tarjeta de Crédito' ? 0 : initial),
     };
 
     onAddAccount(newAccount);
@@ -67,6 +70,7 @@ function AddAccountForm({ onAddAccount }) {
               <option>Cuenta de Ahorro/Débito</option>
               <option>Efectivo</option>
               <option>Tarjeta de Crédito</option>
+              <option>Préstamo Personal</option>
             </select>
           </div>
           <div className="mb-3">

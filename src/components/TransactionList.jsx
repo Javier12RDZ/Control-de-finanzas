@@ -28,7 +28,11 @@ function TransactionList({ transactions, accounts, onEdit, onDelete }) {
                     <small className="text-muted">{tx.category} | {getAccountName(tx.accountId)}</small>
                   </div>
                   <div className="text-end">
-                     <span className="text-danger fw-bold">{formatCurrency(tx.amount)}</span>
+                     {tx.type === 'income' ? (
+                        <span className="text-success fw-bold">{formatCurrency(tx.amount)}</span>
+                     ) : (
+                        <span className="text-danger fw-bold">{formatCurrency(tx.amount)}</span>
+                     )}
                      <small className="d-block text-muted">{new Date(tx.date).toLocaleDateString()}</small>
                   </div>
                 </div>
