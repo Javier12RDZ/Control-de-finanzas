@@ -33,27 +33,33 @@ function SummaryDashboard({ transactions, accounts }) {
       .reduce((total, acc) => total + acc.currentBalance, 0);
   };
 
+  const getTotalDebitBalance = () => {
+    return accounts
+      .filter(acc => acc.type === 'Cuenta de Ahorro/Débito' || acc.type === 'Efectivo')
+      .reduce((total, acc) => total + acc.currentBalance, 0);
+  };
+
   return (
     <div className="card mb-4">
       <div className="card-body">
         <h3 className="card-title">Resumen General</h3>
         <div className="row text-center">
           <div className="col-md-4">
-            <div className="p-2 bg-light rounded">
-              <h5>Gastos de Hoy</h5>
-              <p className="fs-4 text-danger fw-bold">{formatCurrency(getTodayExpenses())}</p>
+            <div className="p-2 bg-light rounded h-100">
+              <h5>Total en Cuentas</h5>
+              <p className="fs-4 text-success fw-bold">{formatCurrency(getTotalDebitBalance())}</p>
             </div>
           </div>
           <div className="col-md-4">
-            <div className="p-2 bg-light rounded">
-              <h5>Gastos de la Semana</h5>
-              <p className="fs-4 text-danger fw-bold">{formatCurrency(getWeekExpenses())}</p>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="p-2 bg-light rounded">
+            <div className="p-2 bg-light rounded h-100">
               <h5>Deuda en Tarjetas</h5>
-              <p className="fs-4 text-warning fw-bold">{formatCurrency(getTotalCreditCardDebt())}</p>
+              <p className="fs-4 text-danger fw-bold">{formatCurrency(getTotalCreditCardDebt())}</p>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="p-2 bg-light rounded h-100">
+              <h5>Gastos de la Semana</h5>
+              <p className="fs-4 text-warning fw-bold">{formatCurrency(getWeekExpenses())}</p>
             </div>
           </div>
         </div>

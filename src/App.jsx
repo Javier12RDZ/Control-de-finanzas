@@ -8,6 +8,7 @@ import BackupManager from './components/BackupManager';
 import EditTransactionModal from './components/EditTransactionModal';
 import SummaryDashboard from './components/SummaryDashboard';
 import EditAccountModal from './components/EditAccountModal';
+import AddTransferForm from './components/AddTransferForm';
 
 function App() {
   // Estados para manejar las cuentas y las transacciones
@@ -158,6 +159,42 @@ function App() {
     setCurrentAccount(null);
   };
 
+  const handleAddTransfer = (transfer) => {
+    let fromAccountCorrect = false;
+    let toAccountCorrect = false;
+
+    const updatedAccounts = accounts.map(acc => {
+      // Restar de la cuenta de origen
+      if (acc.id === transfer.from) {
+        fromAccountCorrect = true;
+        return { ...acc, currentBalance: acc.currentBalance - transfer.amount };
+      }
+      // Restar de la deuda de la cuenta de destino (tarjeta de crédito)
+      if (acc.id === transfer.to) {
+        toAccountCorrect = true;
+        return { ...acc, currentBalance: acc.currentBalance - transfer.amount };
+      }
+      return acc;
+    });
+
+    if (fromAccountCorrect && toAccountCorrect) {
+      setAccounts(updatedAccounts);
+      // Opcional: Añadir una transacción para registrar el pago
+      const newTransaction = {
+        id: Date.now(),
+        accountId: transfer.to, // Asociar a la tarjeta de crédito
+        description: `Pago desde cuenta de origen`,
+        amount: transfer.amount,
+        category: 'Pago de Deuda',
+        date: new Date().toISOString().slice(0, 10),
+      };
+      setTransactions([...transactions, newTransaction]);
+
+    } else {
+      alert("Error al procesar la transferencia. Cuentas no encontradas.");
+    }
+  };
+
 
   return (
     <div className="container mt-4">
@@ -172,6 +209,8 @@ function App() {
           <AddAccountForm onAddAccount={handleAddAccount} />
           {/* Sección para Agregar Gastos */}
           <AddExpenseForm accounts={accounts} onAddTransaction={handleAddTransaction} />
+          {/* Sección para Pagos y Transferencias */}
+          <AddTransferForm accounts={accounts} onAddTransfer={handleAddTransfer} />
         </div>
         <div className="col-lg-7">
           {/* Panel de Resumen */}
