@@ -14,12 +14,12 @@ const categories = [
   'Otros',
 ];
 
-function AddExpenseForm({ accounts, onAddTransaction }) {
+function AddExpenseForm({ accounts, onAddTransaction, getLocalDateString }) {
   const [selectedAccount, setSelectedAccount] = useState('');
   const [expenseDescription, setExpenseDescription] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [category, setCategory] = useState(categories[0]); // Categoría por defecto
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10)); // Fecha por defecto: hoy
+  const [date, setDate] = useState(getLocalDateString(new Date())); // Fecha por defecto: hoy
 
   const handleSubmit = (e) => {
     e.preventDefault();

@@ -34,6 +34,4 @@ body {
   max-width: 85% !important;
 }
 
-.modal.show {
-  display: block;
-}
+

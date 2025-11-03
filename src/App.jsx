@@ -11,6 +11,7 @@ import SummaryDashboard from './components/SummaryDashboard';
 import EditAccountModal from './components/EditAccountModal';
 import AddTransferForm from './components/AddTransferForm';
 import AddIncomeForm from './components/AddIncomeForm';
+import AddInternalTransferForm from './components/AddInternalTransferForm';
 import Header from './components/Header';
 import SideMenu from './components/SideMenu';
 
@@ -23,6 +24,7 @@ function App() {
   const [currentAccount, setCurrentAccount] = useState(null);
   const [dateFilter, setDateFilter] = useState({ start: null, end: null });
   const [showModal, setShowModal] = useState(null);
+  const [showSideMenu, setShowSideMenu] = useState(false);
 
   useEffect(() => {
     try {
@@ -51,8 +53,18 @@ function App() {
     }
   }, [transactions]);
 
+  // Helper para obtener la fecha local en formato YYYY-MM-DD
+  const getLocalDateString = (date) => {
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  };
+
   const handleCloseModal = () => setShowModal(null);
   const handleShowModal = (modalName) => setShowModal(modalName);
+
+  const handleCloseSideMenu = () => setShowSideMenu(false);
+  const handleOpenSideMenu = () => setShowSideMenu(true);
 
   const handleAddAccount = (account) => {
     setAccounts([...accounts, account]);
@@ -117,9 +129,6 @@ function App() {
       if (acc.id === fromAccount.id) {
         return { ...acc, currentBalance: acc.currentBalance - amountInOriginCurrency };
       }
-      if (acc.id === toAccount.id) {
-        return { ...acc, currentBalance: acc.currentBalance - amountInDestinationCurrency };
-      }
       return acc;
     });
 
@@ -132,6 +141,57 @@ function App() {
       amount: amountInDestinationCurrency, // Registrar el monto en la moneda de la cuenta de destino
       category: 'Pago de Deuda',
       date: new Date().toISOString().slice(0, 10),
+      conversionDetails: fromAccount.currency !== toAccount.currency ? {
+        fromAmount: amountInOriginCurrency,
+        fromCurrency: fromAccount.currency,
+        toCurrency: toAccount.currency,
+        exchangeRate: transfer.exchangeRate
+      } : null
+    };
+    setTransactions([...transactions, newTransaction]);
+    handleCloseModal();
+  };
+
+  const handleAddInternalTransfer = (transfer) => {
+    const fromAccount = accounts.find(acc => acc.id === transfer.from);
+    const toAccount = accounts.find(acc => acc.id === transfer.to);
+
+    if (!fromAccount || !toAccount) {
+      alert("Error al procesar la transferencia interna. Cuentas no encontradas.");
+      return;
+    }
+
+    const amountInOriginCurrency = transfer.amount;
+    let amountInDestinationCurrency = transfer.amount;
+
+    // Verificar si es una transferencia entre diferentes monedas
+    if (fromAccount.currency !== toAccount.currency && transfer.exchangeRate) {
+      amountInDestinationCurrency = amountInOriginCurrency * transfer.exchangeRate;
+    } else if (fromAccount.currency !== toAccount.currency && !transfer.exchangeRate) {
+      alert("Error: Se requiere un tipo de cambio para transferencias entre diferentes monedas.");
+      return;
+    }
+
+    const updatedAccounts = accounts.map(acc => {
+      if (acc.id === fromAccount.id) {
+        return { ...acc, currentBalance: acc.currentBalance - amountInOriginCurrency };
+      }
+      if (acc.id === toAccount.id) {
+        return { ...acc, currentBalance: acc.currentBalance + amountInDestinationCurrency };
+      }
+      return acc;
+    });
+
+    setAccounts(updatedAccounts);
+
+    const newTransaction = {
+      id: Date.now(),
+      accountId: transfer.to, // Asociar a la cuenta de destino
+      description: `Transferencia interna de ${fromAccount.name} a ${toAccount.name}`,
+      amount: amountInDestinationCurrency, // Registrar el monto en la moneda de la cuenta de destino
+      category: 'Transferencia Interna',
+      date: transfer.date,
+      type: 'internalTransfer', // Tipo especial para transferencias internas
       conversionDetails: fromAccount.currency !== toAccount.currency ? {
         fromAmount: amountInOriginCurrency,
         fromCurrency: fromAccount.currency,
@@ -235,8 +295,10 @@ function App() {
 
   return (
     <div className="container mt-4">
-      <Header />
+      <Header onOpenSideMenu={handleOpenSideMenu} />
       <SideMenu 
+        show={showSideMenu}
+        onHide={handleCloseSideMenu}
         onApplyFilter={handleApplyFilter} 
         onClearFilter={handleClearFilter}
         onShowModal={handleShowModal} 
@@ -246,7 +308,7 @@ function App() {
         <div className="col-12">
           <SummaryDashboard transactions={transactions} accounts={accounts} dateFilter={dateFilter} />
           <AccountList accounts={accounts} onEdit={handleEditAccountClick} />
-          <TransactionList transactions={displayedTransactions} accounts={accounts} onEdit={handleEditClick} onDelete={handleDeleteTransaction} />
+          <TransactionList transactions={displayedTransactions} accounts={accounts} onEdit={handleEditClick} onDelete={handleDeleteTransaction} getLocalDateString={getLocalDateString} />
         </div>
       </div>
 
@@ -283,7 +345,7 @@ function App() {
           <Modal.Title>Agregar Gasto</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <AddExpenseForm accounts={accounts} onAddTransaction={handleAddTransaction} />
+          <AddExpenseForm accounts={accounts} onAddTransaction={handleAddTransaction} getLocalDateString={getLocalDateString} />
         </Modal.Body>
       </Modal>
 
@@ -292,7 +354,7 @@ function App() {
           <Modal.Title>Registrar Ingreso</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <AddIncomeForm accounts={accounts} onAddIncome={handleAddIncome} />
+          <AddIncomeForm accounts={accounts} onAddIncome={handleAddIncome} getLocalDateString={getLocalDateString} />
         </Modal.Body>
       </Modal>
 
@@ -302,6 +364,15 @@ function App() {
         </Modal.Header>
         <Modal.Body>
           <AddTransferForm accounts={accounts} onAddTransfer={handleAddTransfer} />
+        </Modal.Body>
+      </Modal>
+
+      <Modal show={showModal === 'internalTransfer'} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Realizar Transferencia Interna</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <AddInternalTransferForm accounts={accounts} onAddInternalTransfer={handleAddInternalTransfer} getLocalDateString={getLocalDateString} />
         </Modal.Body>
       </Modal>
 

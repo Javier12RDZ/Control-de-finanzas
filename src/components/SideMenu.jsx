@@ -1,28 +1,35 @@
 import React, { useState } from 'react';
+import { Offcanvas } from 'react-bootstrap';
 
-function SideMenu({ onApplyFilter, onClearFilter, onShowModal }) {
+function SideMenu({ show, onHide, onApplyFilter, onClearFilter, onShowModal }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
   const handleGenerateReport = () => {
     if (startDate && endDate) {
       onApplyFilter(startDate, endDate);
+      onHide(); // Cierra el menú después de generar el reporte
     }
   };
 
+  const handleActionClick = (modalName) => {
+    onShowModal(modalName);
+    onHide(); // Cierra el menú para mostrar el modal
+  };
+
   return (
-    <div className="offcanvas offcanvas-start" tabIndex="-1" id="appSideMenu" aria-labelledby="appSideMenuLabel">
-      <div className="offcanvas-header">
-        <h5 className="offcanvas-title" id="appSideMenuLabel">Opciones</h5>
-        <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-      </div>
-      <div className="offcanvas-body">
+    <Offcanvas show={show} onHide={onHide}>
+      <Offcanvas.Header closeButton>
+        <Offcanvas.Title>Opciones</Offcanvas.Title>
+      </Offcanvas.Header>
+      <Offcanvas.Body>
         <h6>Acciones Rápidas</h6>
         <div className="d-grid gap-2 mb-4">
-          <button className="btn btn-primary" data-bs-dismiss="offcanvas" onClick={() => onShowModal('expense')}>Agregar Gasto</button>
-          <button className="btn btn-success" data-bs-dismiss="offcanvas" onClick={() => onShowModal('income')}>Registrar Ingreso</button>
-          <button className="btn btn-info" data-bs-dismiss="offcanvas" onClick={() => onShowModal('account')}>Agregar Cuenta</button>
-          <button className="btn btn-warning" data-bs-dismiss="offcanvas" onClick={() => onShowModal('transfer')}>Realizar Pago/Transferencia</button>
+          <button className="btn btn-primary" onClick={() => handleActionClick('expense')}>Agregar Gasto</button>
+          <button className="btn btn-success" onClick={() => handleActionClick('income')}>Registrar Ingreso</button>
+          <button className="btn btn-info" onClick={() => handleActionClick('account')}>Agregar Cuenta</button>
+          <button className="btn btn-warning" onClick={() => handleActionClick('transfer')}>Realizar Pago/Transferencia</button>
+          <button className="btn btn-info" onClick={() => handleActionClick('internalTransfer')}>Transferencia Interna</button>
         </div>
 
         <hr />
@@ -40,8 +47,8 @@ function SideMenu({ onApplyFilter, onClearFilter, onShowModal }) {
           <button className="btn btn-primary" onClick={handleGenerateReport}>Generar Reporte</button>
           <button className="btn btn-secondary" onClick={() => { setStartDate(''); setEndDate(''); onClearFilter(); }}>Limpiar Filtro</button>
         </div>
-      </div>
-    </div>
+      </Offcanvas.Body>
+    </Offcanvas>
   );
 }
 

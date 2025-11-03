@@ -62,7 +62,7 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
       if (!summaryByCurrency[currency].expensesThisWeek) summaryByCurrency[currency].expensesThisWeek = 0;
       if (!summaryByCurrency[currency].incomeThisWeek) summaryByCurrency[currency].incomeThisWeek = 0;
 
-      if (tx.type !== 'income' && tx.category !== 'Pago de Deuda') {
+      if (tx.type !== 'income' && tx.category !== 'Pago de Deuda' && tx.type !== 'internalTransfer') {
         if (tx.date === today) {
           summaryByCurrency[currency].expensesToday += tx.amount;
         }
@@ -98,9 +98,9 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
         if (!acc[currency]) {
             acc[currency] = { income: 0, expense: 0 };
         }
-        if (tx.type === 'income') {
+        if (tx.type === 'income' && tx.type !== 'internalTransfer') {
             acc[currency].income += tx.amount;
-        } else {
+        } else if (tx.type !== 'internalTransfer') {
             acc[currency].expense += tx.amount;
         }
         return acc;

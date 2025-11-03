@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
-function AddTransferForm({ accounts, onAddTransfer }) {
+function AddInternalTransferForm({ accounts, onAddInternalTransfer, getLocalDateString }) {
   const [fromAccountId, setFromAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
   const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(getLocalDateString(new Date()));
   const [exchangeRateInput, setExchangeRateInput] = useState(''); // Valor del input del tipo de cambio
   const [showExchangeRate, setShowExchangeRate] = useState(false);
   const [fromCurrency, setFromCurrency] = useState('');
   const [toCurrency, setToCurrency] = useState('');
 
-  const debitAccounts = accounts.filter(acc => acc.type === 'Cuenta de Ahorro/Débito' || acc.type === 'Efectivo');
-  const creditAccounts = accounts.filter(acc => acc.type === 'Tarjeta de Crédito' || acc.type === 'Préstamo Personal');
+  const eligibleAccounts = accounts.filter(acc => acc.type === 'Cuenta de Ahorro/Débito' || acc.type === 'Efectivo');
 
   useEffect(() => {
     const fromAcc = accounts.find(acc => acc.id === parseInt(fromAccountId));
@@ -39,6 +39,10 @@ function AddTransferForm({ accounts, onAddTransfer }) {
       alert('Por favor, completa todos los campos, incluyendo el tipo de cambio si es necesario.');
       return;
     }
+    if (fromAccountId === toAccountId) {
+      alert('La cuenta de origen y destino no pueden ser la misma.');
+      return;
+    }
 
     let actualExchangeRate = null;
     if (showExchangeRate) {
@@ -52,37 +56,43 @@ function AddTransferForm({ accounts, onAddTransfer }) {
       }
     }
 
-    onAddTransfer({
+    onAddInternalTransfer({
       from: parseInt(fromAccountId),
       to: parseInt(toAccountId),
       amount: parseFloat(amount),
+      date: date,
       exchangeRate: actualExchangeRate,
     });
+
+    // Limpiar formulario
+    setFromAccountId('');
+    setToAccountId('');
     setAmount('');
     setExchangeRateInput('');
+    setDate(getLocalDateString(new Date()));
   };
 
   return (
     <div className="card mt-4">
       <div className="card-body">
-        <h3 className="card-title">Realizar Pago / Transferencia</h3>
+        <h3 className="card-title">Transferencia Interna</h3>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label htmlFor="fromAccount" className="form-label">Desde la cuenta (Origen)</label>
+            <label htmlFor="fromAccount" className="form-label">Desde la cuenta</label>
             <select id="fromAccount" className="form-select" value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)} required>
-              <option value="" disabled>Selecciona una cuenta de débito</option>
-              {debitAccounts.map(acc => <option key={acc.id} value={acc.id}>{`${acc.name} (${acc.currency})`}</option>)}
+              <option value="" disabled>Selecciona cuenta de origen</option>
+              {eligibleAccounts.map(acc => <option key={acc.id} value={acc.id}>{`${acc.name} (${acc.currency})`}</option>)}
             </select>
           </div>
           <div className="mb-3">
-            <label htmlFor="toAccount" className="form-label">Hacia la cuenta (Destino)</label>
+            <label htmlFor="toAccount" className="form-label">Hacia la cuenta</label>
             <select id="toAccount" className="form-select" value={toAccountId} onChange={(e) => setToAccountId(e.target.value)} required>
-              <option value="" disabled>Selecciona una deuda (Tarjeta o Préstamo)</option>
-              {creditAccounts.map(acc => <option key={acc.id} value={acc.id}>{`${acc.name} (${acc.currency})`}</option>)}
+              <option value="" disabled>Selecciona cuenta de destino</option>
+              {eligibleAccounts.map(acc => <option key={acc.id} value={acc.id}>{`${acc.name} (${acc.currency})`}</option>)}
             </select>
           </div>
           <div className="mb-3">
-            <label htmlFor="transferAmount" className="form-label">Monto a Pagar</label>
+            <label htmlFor="transferAmount" className="form-label">Monto a Transferir</label>
             <input id="transferAmount" type="number" className="form-control" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
 
@@ -98,11 +108,15 @@ function AddTransferForm({ accounts, onAddTransfer }) {
             </div>
           )}
 
-          <button type="submit" className="btn btn-success">Realizar Pago</button>
+          <div className="mb-3">
+            <label htmlFor="transferDate" className="form-label">Fecha</label>
+            <input type="date" className="form-control" id="transferDate" value={date} onChange={(e) => setDate(e.target.value)} required />
+          </div>
+          <button type="submit" className="btn btn-primary">Realizar Transferencia</button>
         </form>
       </div>
     </div>
   );
 }
 
-export default AddTransferForm;
+export default AddInternalTransferForm;

@@ -1,9 +1,9 @@
 import React from 'react';
 
-function Header() {
+function Header({ onOpenSideMenu }) {
   return (
     <header className="d-flex align-items-center pb-3 mb-4 border-bottom">
-      <button className="btn btn-light me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#appSideMenu" aria-controls="appSideMenu">
+      <button className="btn btn-light me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#appSideMenu" aria-controls="appSideMenu" onClick={onOpenSideMenu}>
         ☰
       </button>
       <div>

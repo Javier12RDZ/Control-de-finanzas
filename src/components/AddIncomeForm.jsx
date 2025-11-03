@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
-function AddIncomeForm({ accounts, onAddIncome }) {
+function AddIncomeForm({ accounts, onAddIncome, getLocalDateString }) {
   const [accountId, setAccountId] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getLocalDateString(new Date()));
 
   // Solo permitir ingresos a cuentas de débito/efectivo
   const eligibleAccounts = accounts.filter(acc => acc.type === 'Cuenta de Ahorro/Débito' || acc.type === 'Efectivo');
