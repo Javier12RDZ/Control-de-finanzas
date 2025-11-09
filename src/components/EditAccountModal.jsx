@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
 function EditAccountModal({ account, onUpdate, onCancel }) {
-  const [formState, setFormState] = useState({ name: '', bank: '', balance: '' });
+  const [formState, setFormState] = useState({ name: '', bank: '', balance: '', currentBalance: '' });
 
   useEffect(() => {
     if (account) {
-      const balanceValue = account.type === 'Tarjeta de Crédito' ? account.balance : account.currentBalance;
       setFormState({
         name: account.name || '',
         bank: account.bank || '',
-        balance: balanceValue || ''
+        balance: account.type === 'Tarjeta de Crédito' ? account.balance : account.currentBalance,
+        currentBalance: account.type === 'Tarjeta de Crédito' ? account.currentBalance : ''
       });
     }
   }, [account]);
@@ -22,12 +22,24 @@ function EditAccountModal({ account, onUpdate, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const updatedAccount = {
+    
+    let updatedAccountData = {
       ...account,
-      ...formState,
-      balance: parseFloat(formState.balance) || 0
+      name: formState.name,
+      bank: formState.bank,
     };
-    onUpdate(updatedAccount);
+
+    if (account.type === 'Tarjeta de Crédito') {
+      updatedAccountData.balance = parseFloat(formState.balance) || 0;
+      updatedAccountData.currentBalance = parseFloat(formState.currentBalance) || 0;
+    } else {
+      // For other accounts, the main input field controls the currentBalance
+      const newBalance = parseFloat(formState.balance) || 0;
+      updatedAccountData.balance = newBalance;
+      updatedAccountData.currentBalance = newBalance;
+    }
+    
+    onUpdate(updatedAccountData);
   };
 
   return (
@@ -47,10 +59,16 @@ function EditAccountModal({ account, onUpdate, onCancel }) {
             </div>
             <div className="mb-3">
               <label htmlFor="balance" className="form-label">
-                {account?.type === 'Tarjeta de Crédito' ? 'Límite de Crédito' : 'Balance'}
+                {account?.type === 'Tarjeta de Crédito' ? 'Límite de Crédito' : 'Saldo Actual'}
               </label>
               <input name="balance" id="balance" type="number" className="form-control" value={formState.balance} onChange={handleChange} />
             </div>
+            {account?.type === 'Tarjeta de Crédito' && (
+              <div className="mb-3">
+                <label htmlFor="currentBalance" className="form-label">Deuda Actual</label>
+                <input name="currentBalance" id="currentBalance" type="number" className="form-control" value={formState.currentBalance} onChange={handleChange} />
+              </div>
+            )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
@@ -62,4 +80,3 @@ function EditAccountModal({ account, onUpdate, onCancel }) {
 }
 
 export default EditAccountModal;
-

@@ -36,7 +36,6 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
       return acc;
     }, {});
 
-    // --- Lógica de Fecha Corregida ---
     const getLocalDateString = (date) => {
         const d = new Date(date);
         d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -46,15 +45,16 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     const today = getLocalDateString(new Date());
     
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
-    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Ajuste para que la semana empiece en Lunes
+    const dayOfWeek = now.getDay();
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
     const firstDayOfWeek = new Date(new Date().setDate(diff));
     const firstDayStr = getLocalDateString(firstDayOfWeek);
-    // --- Fin de Lógica de Fecha ---
 
     transactions.forEach(tx => {
-      const account = accounts.find(acc => acc.id === tx.accountId);
+      const accountId = tx.accountId || tx.toAccountId;
+      const account = accounts.find(acc => acc.id === accountId);
       const currency = account?.currency || 'MXN';
+
       if (!summaryByCurrency[currency]) {
         summaryByCurrency[currency] = { totalInAccounts: 0, totalDebt: 0 };
       }
@@ -76,7 +76,6 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
       }
     });
 
-    // Aplanar la estructura para renderizar
     Object.keys(summaryByCurrency).forEach(currency => {
       initialSummary.totalInAccounts[currency] = summaryByCurrency[currency].totalInAccounts;
       initialSummary.totalDebt[currency] = summaryByCurrency[currency].totalDebt;
@@ -93,14 +92,15 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     if (!dateFilter.start || !dateFilter.end) return null;
     const reportTransactions = transactions.filter(tx => tx.date >= dateFilter.start && tx.date <= dateFilter.end);
     return reportTransactions.reduce((acc, tx) => {
-        const account = accounts.find(a => a.id === tx.accountId);
+        const accountId = tx.accountId || tx.toAccountId;
+        const account = accounts.find(a => a.id === accountId);
         const currency = account?.currency || 'MXN';
         if (!acc[currency]) {
             acc[currency] = { income: 0, expense: 0 };
         }
-        if (tx.type === 'income' && tx.type !== 'internalTransfer') {
+        if (tx.type === 'income') {
             acc[currency].income += tx.amount;
-        } else if (tx.type !== 'internalTransfer') {
+        } else if (tx.type !== 'internalTransfer' && tx.category !== 'Pago de Deuda') {
             acc[currency].expense += tx.amount;
         }
         return acc;
@@ -113,7 +113,7 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
         return <p className="fs-5 fw-bold mb-1">{formatCurrency(0)}</p>;
     }
     return entries.map(([currency, value]) => {
-        if (value === 0) return null; // No mostrar si el valor es 0
+        if (value === 0) return null;
         return <p key={currency} className="fs-5 fw-bold mb-1">{formatCurrency(value, currency)}</p>
     });
   };

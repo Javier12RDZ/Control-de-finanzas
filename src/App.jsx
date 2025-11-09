@@ -313,19 +313,9 @@ function App() {
   };
 
   const handleUpdateAccount = (updatedAccount) => {
-    setAccounts(accounts.map(acc => {
-        if (acc.id === updatedAccount.id) {
-            if (updatedAccount.type === 'Tarjeta de Crédito') {
-                // For credit card, the modal correctly updated the 'balance' (limit)
-                return updatedAccount;
-            } else {
-                // For other types, the value from the modal's 'balance' field
-                // should be applied to 'currentBalance'. We also update 'balance' for consistency.
-                return { ...updatedAccount, currentBalance: updatedAccount.balance };
-            }
-        }
-        return acc;
-    }));
+    setAccounts(accounts.map(acc => 
+      acc.id === updatedAccount.id ? updatedAccount : acc
+    ));
     setIsEditingAccount(false);
     setCurrentAccount(null);
   };
