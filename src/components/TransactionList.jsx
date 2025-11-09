@@ -12,6 +12,7 @@ function TransactionList({ transactions, accounts, onEdit, onDelete, getLocalDat
     try {
       return new Intl.NumberFormat('es-MX', { style: 'currency', currency: currencyCode }).format(amount);
     } catch (e) {
+      console.error("Failed to format currency with code:", currencyCode);
       return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
     }
   };
@@ -23,13 +24,15 @@ function TransactionList({ transactions, accounts, onEdit, onDelete, getLocalDat
     : transactions.filter(tx => tx.date === today);
 
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-    if (a.date < b.date) return 1; // a es más antigua que b, b va primero
-    if (a.date > b.date) return -1; // a es más reciente que b, a va primero
-    return 0;
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    if (dateB < dateA) return -1;
+    if (dateB > dateA) return 1;
+    return b.id - a.id; // Fallback to ID for same-day transactions
   });
 
   return (
-    <div className="card">
+    <div className="card mt-4">
       <div className="card-body">
         <h3 className="card-title">Historial de Transacciones</h3>
         <div className="d-flex justify-content-end mb-3">
@@ -42,21 +45,29 @@ function TransactionList({ transactions, accounts, onEdit, onDelete, getLocalDat
         </div>
         <ul className="list-group list-group-flush">
           {sortedTransactions.length === 0 ? (
-            <li className="list-group-item">No hay transacciones registradas.</li>
+            <li className="list-group-item">No hay transacciones para el período seleccionado.</li>
           ) : (
             sortedTransactions.map(tx => {
-              const account = getAccountDetails(tx.accountId);
-              const accountName = account ? `${account.name} (${account.currency})` : 'Cuenta no encontrada';
+              // For new two-account txs, use toAccountId. For old ones, use accountId.
+              const displayAccountId = tx.toAccountId || tx.accountId;
+              const account = getAccountDetails(displayAccountId);
+
+              let detailLine;
+              // For transfers/payments, the description is self-explanatory.
+              if (tx.type === 'internalTransfer' || tx.category === 'Pago de Deuda') {
+                detailLine = <small className="text-muted">{tx.category}</small>;
+              } else {
+                // For regular txs, show category and account name.
+                const accountName = account ? `${account.name} (${account.currency})` : 'Cuenta no encontrada';
+                detailLine = <small className="text-muted">{tx.category} | {accountName}</small>;
+              }
 
               return (
                 <li key={tx.id} className="list-group-item">
                   <div className="d-flex justify-content-between">
                     <div>
                       <h6 className="my-0">{tx.description}</h6>
-                      <small className="text-muted">{tx.category} | {accountName}</small>
-                      {tx.type === 'internalTransfer' && (
-                        <small className="d-block text-muted fst-italic">{tx.description}</small>
-                      )}
+                      {detailLine}
                       {tx.conversionDetails && (
                         <small className="d-block text-info fw-bold">
                           {`Pagado: ${formatCurrency(tx.conversionDetails.fromAmount, tx.conversionDetails.fromCurrency)} @ ${tx.conversionDetails.exchangeRate}`}

@@ -140,7 +140,8 @@ function App() {
 
     const newTransaction = {
       id: Date.now(),
-      accountId: toAccount.id,
+      fromAccountId: transfer.from, // Guardar ID de origen
+      toAccountId: transfer.to,     // Guardar ID de destino
       description: `Pago desde ${fromAccount.name}`,
       amount: amountInDestinationCurrency, // Registrar el monto en la moneda de la cuenta de destino
       category: 'Pago de Deuda',
@@ -190,7 +191,8 @@ function App() {
 
     const newTransaction = {
       id: Date.now(),
-      accountId: transfer.to, // Asociar a la cuenta de destino
+      fromAccountId: transfer.from, // Guardar ID de origen
+      toAccountId: transfer.to,     // Guardar ID de destino
       description: `Transferencia interna de ${fromAccount.name} a ${toAccount.name}`,
       amount: amountInDestinationCurrency, // Registrar el monto en la moneda de la cuenta de destino
       category: 'Transferencia Interna',
@@ -213,17 +215,68 @@ function App() {
   };
 
   const handleDeleteTransaction = (id) => {
-    const transactionToDelete = transactions.find(tx => tx.id === id);
-    if (!transactionToDelete) return;
-    const updatedAccounts = accounts.map(acc => {
-      if (acc.id === transactionToDelete.accountId) {
-        const newBalance = acc.type === 'Tarjeta de Crédito'
-          ? acc.currentBalance - transactionToDelete.amount
-          : acc.currentBalance + transactionToDelete.amount;
-        return { ...acc, currentBalance: newBalance };
-      }
-      return acc;
-    });
+    const txToDelete = transactions.find(tx => tx.id === id);
+    if (!txToDelete) return;
+
+    let updatedAccounts = accounts;
+
+    // Case 1: It's a transfer or debt payment involving two accounts
+    if (txToDelete.fromAccountId && txToDelete.toAccountId) {
+      const fromAccount = accounts.find(acc => acc.id === txToDelete.fromAccountId);
+      const toAccount = accounts.find(acc => acc.id === txToDelete.toAccountId);
+      if (!fromAccount || !toAccount) return;
+
+      const amountInDestCurrency = txToDelete.amount;
+      const amountInOriginCurrency = txToDelete.conversionDetails
+        ? txToDelete.conversionDetails.fromAmount
+        : amountInDestCurrency;
+
+      updatedAccounts = accounts.map(acc => {
+        // Add money back to the source account
+        if (acc.id === fromAccount.id) {
+          return { ...acc, currentBalance: acc.currentBalance + amountInOriginCurrency };
+        }
+        // Revert the destination account
+        if (acc.id === toAccount.id) {
+          let newBalance;
+          if (txToDelete.type === 'internalTransfer') {
+            // Subtract money from the destination of an internal transfer
+            newBalance = acc.currentBalance - amountInDestCurrency;
+          } else { // Is a 'Pago de Deuda'
+            // Add the amount back to the debt (increase debt)
+            newBalance = acc.currentBalance + amountInDestCurrency;
+          }
+          return { ...acc, currentBalance: newBalance };
+        }
+        return acc;
+      });
+    }
+    // Case 2: Legacy or single-account transaction
+    else if (txToDelete.accountId) {
+      updatedAccounts = accounts.map(acc => {
+        if (acc.id === txToDelete.accountId) {
+          let newBalance;
+          // Reverting an income by subtracting the amount
+          if (txToDelete.type === 'income') {
+            newBalance = acc.currentBalance - txToDelete.amount;
+          } 
+          // Reverting an expense
+          else {
+            // For credit card, reverting an expense means reducing the debt
+            if (acc.type === 'Tarjeta de Crédito') {
+              newBalance = acc.currentBalance - txToDelete.amount;
+            }
+            // For debit/cash, reverting an expense means adding the money back
+            else {
+              newBalance = acc.currentBalance + txToDelete.amount;
+            }
+          }
+          return { ...acc, currentBalance: newBalance };
+        }
+        return acc;
+      });
+    }
+
     setAccounts(updatedAccounts);
     setTransactions(transactions.filter(tx => tx.id !== id));
   };
