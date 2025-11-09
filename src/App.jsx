@@ -129,6 +129,10 @@ function App() {
       if (acc.id === fromAccount.id) {
         return { ...acc, currentBalance: acc.currentBalance - amountInOriginCurrency };
       }
+      if (acc.id === toAccount.id) {
+        // For debt payments, the balance of the destination account should decrease
+        return { ...acc, currentBalance: acc.currentBalance - amountInDestinationCurrency };
+      }
       return acc;
     });
 
