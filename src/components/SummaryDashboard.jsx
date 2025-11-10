@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import ReportWindow from './ReportWindow';
 
 function SummaryDashboard({ transactions, accounts, dateFilter }) {
 
@@ -107,6 +108,8 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     }, {});
   }, [transactions, accounts, dateFilter]);
 
+  const [showReportWindow, setShowReportWindow] = useState(false);
+
   const renderSummary = (data) => {
     const entries = Object.entries(data);
     if (entries.length === 0 || entries.every(([/*_*/, value]) => value === 0)) {
@@ -157,7 +160,10 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
 
         {reportSummary && (
           <div className="mt-4 pt-3 border-top">
-            <h4 className="card-title">Reporte del {dateFilter.start} al {dateFilter.end}</h4>
+            <div className="d-flex justify-content-between align-items-center">
+                <h4 className="card-title">Reporte del {dateFilter.start} al {dateFilter.end}</h4>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowReportWindow(true)}>Ver en Nueva Ventana</button>
+            </div>
             {Object.keys(reportSummary).map(currency => (
                 <div key={currency} className="mb-3 p-3 border rounded">
                     <h5 className="mb-3">Moneda: <span className="badge bg-info">{currency}</span></h5>
@@ -178,6 +184,15 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
                 </div>
             ))}
           </div>
+        )}
+
+        {showReportWindow && (
+          <ReportWindow
+            closeWindow={() => setShowReportWindow(false)}
+            transactions={transactions.filter(tx => tx.date >= dateFilter.start && tx.date <= dateFilter.end)}
+            reportSummary={reportSummary}
+            dateFilter={dateFilter}
+          />
         )}
 
       </div>
