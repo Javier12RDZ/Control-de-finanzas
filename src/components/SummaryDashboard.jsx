@@ -6,7 +6,7 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     const currencyCode = currency || 'MXN';
     try {
       return new Intl.NumberFormat('es-MX', { style: 'currency', currency: currencyCode }).format(amount);
-    } catch (e) {
+    } catch (e) { // eslint-disable-line no-unused-vars
       return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
     }
   };
@@ -62,7 +62,7 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
       if (!summaryByCurrency[currency].expensesThisWeek) summaryByCurrency[currency].expensesThisWeek = 0;
       if (!summaryByCurrency[currency].incomeThisWeek) summaryByCurrency[currency].incomeThisWeek = 0;
 
-      if (tx.type !== 'income' && tx.category !== 'Pago de Deuda' && tx.type !== 'internalTransfer') {
+      if (tx.type !== 'income' && tx.type !== 'internalTransfer') {
         if (tx.date === today) {
           summaryByCurrency[currency].expensesToday += tx.amount;
         }
@@ -100,7 +100,7 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
         }
         if (tx.type === 'income') {
             acc[currency].income += tx.amount;
-        } else if (tx.type !== 'internalTransfer' && tx.category !== 'Pago de Deuda') {
+        } else if (tx.type !== 'internalTransfer') {
             acc[currency].expense += tx.amount;
         }
         return acc;
@@ -109,7 +109,7 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
 
   const renderSummary = (data) => {
     const entries = Object.entries(data);
-    if (entries.length === 0 || entries.every(([_, value]) => value === 0)) {
+    if (entries.length === 0 || entries.every(([/*_*/, value]) => value === 0)) {
         return <p className="fs-5 fw-bold mb-1">{formatCurrency(0)}</p>;
     }
     return entries.map(([currency, value]) => {

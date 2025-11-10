@@ -57,3 +57,17 @@ Aplicación web desarrollada con React (Vite) y Bootstrap para la gestión perso
     2.  `git commit -m "Mensaje descriptivo de los cambios"`
     3.  `git push`
     4.  `npm run deploy`
+
+---
+## Sesión: 8 de Noviembre de 2025
+
+### Cambios Realizados
+*   **Corrección en Lógica de Pagos:** Se solucionó un error crítico donde al hacer un pago a una tarjeta de crédito o préstamo, el saldo de la deuda no se actualizaba.
+*   **Mejora en Modelo de Datos de Transacciones:** Se modificó la estructura de las transacciones de "Pago de Deuda" y "Transferencia Interna" para incluir siempre la cuenta de origen y de destino (`fromAccountId`, `toAccountId`).
+*   **Corrección en Eliminación de Transacciones:** Se reescribió la función de eliminar para que, gracias al nuevo modelo de datos, se puedan revertir correctamente los saldos de ambas cuentas al eliminar un pago o una transferencia.
+*   **Corrección en Historial:** Se ajustó el componente del historial de transacciones para que pudiera mostrar correctamente los pagos y transferencias con la nueva estructura de datos.
+*   **Nueva Función: Editar Deuda de Tarjetas de Crédito:** Se implementó la funcionalidad para editar directamente la "Deuda Actual" de una tarjeta de crédito desde el modal de edición de cuentas.
+*   **Corrección en Panel de Resumen (Parcial):** Se robusteció la lógica del panel de resumen para que no falle al procesar los nuevos tipos de transacción.
+
+### Tareas Pendientes
+*   **Ajustar Cálculo de Gastos:** Modificar el `SummaryDashboard` para que los **pagos a deudas** (`Pago de Deuda`) se incluyan en los totales de "Gastos de Hoy" y "Gastos de la Semana", según el requerimiento del usuario. Las transferencias internas deben seguir excluidas de este cálculo.
