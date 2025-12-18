@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Control Finanzas</string>
+    <string name="title_activity_main">Control Finanzas</string>
+    <string name="package_name">com.financeapp.personal</string>
+    <string name="custom_url_scheme">com.financeapp.personal</string>
+</resources>

@@ -87,3 +87,26 @@ Aplicación web desarrollada con React (Vite) y Bootstrap para la gestión perso
         4.  Refactorizar la lógica actual de persistencia de datos (eliminando `localStorage`).
         5.  Reemplazar las operaciones de `localStorage` (`getItem`, `setItem`) con llamadas a la API de Firestore para guardar y recuperar los datos asociados al usuario autenticado.
 *   **Próximos Pasos:** Esta tarea se ha pospuesto para una sesión futura, dejando el plan de acción delineado para su implementación.
+
+---
+## Sesión: 2 de Diciembre de 2025
+
+### Configuración para Android (APK)
+
+*   **Integración de Capacitor:** Se configuró el proyecto para generar una aplicación Android (APK) utilizando Capacitor.
+    *   Se instalaron las dependencias: `@capacitor/core`, `@capacitor/cli`, `@capacitor/android`.
+    *   Se inicializó Capacitor con el nombre de la aplicación "Control Finanzas" y el ID "com.financeapp.personal".
+    *   Se construyó el proyecto web (`npm run build`).
+    *   Se añadió la plataforma Android, creando la estructura necesaria en la carpeta `android/`.
+*   **Generación de APK (Instrucciones):** Se proporcionaron instrucciones detalladas para la compilación del APK mediante Android Studio, ya que la compilación directa por línea de comandos falló por falta de configuración del entorno JAVA_HOME.
+    *   **Ruta del proyecto Android:** `C:\Users\noroe\OneDrive\Documentos\Proyectos-web\finance-app\android`
+    *   **Ruta del APK de depuración:** `C:\Users\noroe\OneDrive\Documentos\Proyectos-web\finance-app\android\app\build\outputs\apk\debug\app-debug.apk`
+    *   **Proceso de actualización:** Para futuras actualizaciones del código en la APK, se requiere: `npm run build`, `npx cap sync`, y recompilar en Android Studio.
+*   **Solución a Pantalla en Blanco en Android:** Se corrigió el problema de la pantalla en blanco al ejecutar la APK en Android.
+    *   **Causa:** El `base` en `vite.config.js` estaba configurado con una ruta absoluta (`/Control-de-finanzas/`), lo que impedía que la aplicación web se cargara correctamente en el WebView de Android.
+    *   **Solución:** Se modificó `vite.config.js` para usar una ruta relativa (`base: './'`), lo cual es compatible tanto con GitHub Pages (para proyectos desplegados en subcarpetas) como con la ejecución en Android.
+*   **Persistencia de Datos en Android:** Se identificó que los datos se almacenan en `localStorage` dentro del WebView de Android, lo que implica que se borrarán al desinstalar la app o limpiar sus datos.
+*   **Exportación de Datos a Excel en Android:** Se inició la mejora de la función `handleExport` en `BackupManager.jsx`.
+    *   **Problema:** `XLSX.writeFile` no funciona correctamente en Android WebView.
+    *   **Acción tomada:** Se instaló el plugin de Capacitor `@capacitor/filesystem` (`npm install @capacitor/filesystem`) para permitir guardar el archivo Excel directamente en el sistema de archivos del dispositivo Android (ej. carpeta `Documents`).
+    *   **Estado:** La integración de `@capacitor/filesystem` en `BackupManager.jsx` para modificar la lógica de exportación está **pendiente**.
