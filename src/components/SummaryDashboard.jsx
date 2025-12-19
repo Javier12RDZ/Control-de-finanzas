@@ -16,12 +16,14 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     const initialSummary = {
       totalInAccounts: {},
       totalDebt: {},
-      expensesToday: {}, // Kept for potential total sum display
+      expensesToday: {}, 
       cashExpensesToday: {},
       creditExpensesToday: {},
-      expensesThisWeek: {}, // Kept for potential total sum display
+      debtPaymentsToday: {}, // Nuevo rastreador
+      expensesThisWeek: {}, 
       cashExpensesThisWeek: {},
       creditExpensesThisWeek: {},
+      debtPaymentsThisWeek: {}, // Nuevo rastreador
       incomeThisWeek: {},
     };
 
@@ -63,18 +65,32 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
       if (!summaryByCurrency[currency]) {
         summaryByCurrency[currency] = { totalInAccounts: 0, totalDebt: 0 };
       }
-      if (!summaryByCurrency[currency].expensesToday) summaryByCurrency[currency].expensesToday = 0;
+      // Inicializar contadores si no existen
       if (!summaryByCurrency[currency].cashExpensesToday) summaryByCurrency[currency].cashExpensesToday = 0;
       if (!summaryByCurrency[currency].creditExpensesToday) summaryByCurrency[currency].creditExpensesToday = 0;
+      if (!summaryByCurrency[currency].debtPaymentsToday) summaryByCurrency[currency].debtPaymentsToday = 0;
 
-      if (!summaryByCurrency[currency].expensesThisWeek) summaryByCurrency[currency].expensesThisWeek = 0;
       if (!summaryByCurrency[currency].cashExpensesThisWeek) summaryByCurrency[currency].cashExpensesThisWeek = 0;
       if (!summaryByCurrency[currency].creditExpensesThisWeek) summaryByCurrency[currency].creditExpensesThisWeek = 0;
+      if (!summaryByCurrency[currency].debtPaymentsThisWeek) summaryByCurrency[currency].debtPaymentsThisWeek = 0;
 
       if (!summaryByCurrency[currency].incomeThisWeek) summaryByCurrency[currency].incomeThisWeek = 0;
 
-      // Excluir 'Pago de Deuda' de los gastos de consumo
-      if (tx.type !== 'income' && tx.type !== 'internalTransfer' && tx.category !== 'Pago de Deuda') {
+      // Lógica de Clasificación
+      if (tx.type === 'income') {
+        if (tx.date >= firstDayStr) {
+          summaryByCurrency[currency].incomeThisWeek += tx.amount;
+        }
+      } else if (tx.category === 'Pago de Deuda') {
+        // Rastrear Pagos de Deuda por separado
+        if (tx.date === today) {
+          summaryByCurrency[currency].debtPaymentsToday += tx.amount;
+        }
+        if (tx.date >= firstDayStr) {
+          summaryByCurrency[currency].debtPaymentsThisWeek += tx.amount;
+        }
+      } else if (tx.type !== 'internalTransfer') {
+        // Gastos regulares (Consumo)
         const isCredit = account.type === 'Tarjeta de Crédito';
 
         if (tx.date === today) {
@@ -91,23 +107,21 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
              summaryByCurrency[currency].cashExpensesThisWeek += tx.amount;
           }
         }
-      } else if (tx.type === 'income') {
-        if (tx.date >= firstDayStr) {
-          summaryByCurrency[currency].incomeThisWeek += tx.amount;
-        }
-      }
+      } 
     });
 
     Object.keys(summaryByCurrency).forEach(currency => {
       initialSummary.totalInAccounts[currency] = summaryByCurrency[currency].totalInAccounts;
       initialSummary.totalDebt[currency] = summaryByCurrency[currency].totalDebt;
       
-      // Assign separated values
+      // Asignar valores separados
       initialSummary.cashExpensesToday[currency] = summaryByCurrency[currency].cashExpensesToday || 0;
       initialSummary.creditExpensesToday[currency] = summaryByCurrency[currency].creditExpensesToday || 0;
+      initialSummary.debtPaymentsToday[currency] = summaryByCurrency[currency].debtPaymentsToday || 0;
       
       initialSummary.cashExpensesThisWeek[currency] = summaryByCurrency[currency].cashExpensesThisWeek || 0;
       initialSummary.creditExpensesThisWeek[currency] = summaryByCurrency[currency].creditExpensesThisWeek || 0;
+      initialSummary.debtPaymentsThisWeek[currency] = summaryByCurrency[currency].debtPaymentsThisWeek || 0;
 
       initialSummary.incomeThisWeek[currency] = summaryByCurrency[currency].incomeThisWeek || 0;
     });
@@ -148,23 +162,38 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     });
   };
 
-  const renderSplitSummary = (cashData, creditData) => {
-    const currencies = new Set([...Object.keys(cashData), ...Object.keys(creditData)]);
+  const renderSplitSummary = (cashData, creditData, debtData = {}) => {
+    const currencies = new Set([...Object.keys(cashData), ...Object.keys(creditData), ...Object.keys(debtData)]);
     if (currencies.size === 0) return <p className="fs-5 fw-bold mb-1">{formatCurrency(0)}</p>;
 
     return Array.from(currencies).map(currency => {
       const cash = cashData[currency] || 0;
       const credit = creditData[currency] || 0;
-      const total = cash + credit;
+      const debt = debtData[currency] || 0;
+      const totalConsumption = cash + credit;
 
-      if (total === 0) return null;
+      if (totalConsumption === 0 && debt === 0) return null;
 
       return (
         <div key={currency} className="mb-2">
-          <p className="fs-5 fw-bold mb-0">{formatCurrency(total, currency)}</p>
-          <small className="text-muted" style={{ fontSize: '0.8em' }}>
-            Efec: {formatCurrency(cash, currency)} | Créd: {formatCurrency(credit, currency)}
-          </small>
+          {/* Total Consumption */}
+          {totalConsumption > 0 && (
+            <>
+              <p className="fs-5 fw-bold mb-0 text-danger">{formatCurrency(totalConsumption, currency)}</p>
+              <small className="text-muted d-block" style={{ fontSize: '0.8em' }}>
+                Efec: {formatCurrency(cash, currency)} | Créd: {formatCurrency(credit, currency)}
+              </small>
+            </>
+          )}
+          
+          {/* Debt Payments (Separated) */}
+          {debt > 0 && (
+             <div className="mt-1">
+               <small className="text-primary fw-bold" style={{ fontSize: '0.85em' }}>
+                 Pagos Deuda: {formatCurrency(debt, currency)}
+               </small>
+             </div>
+          )}
         </div>
       );
     });
@@ -190,16 +219,16 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
           <div className="col-md-4 mb-3">
             <div className="p-3 bg-light rounded h-100">
               <h5>Gastos de Hoy</h5>
-              <div className="text-danger">
-                {renderSplitSummary(summary.cashExpensesToday, summary.creditExpensesToday)}
+              <div>
+                {renderSplitSummary(summary.cashExpensesToday, summary.creditExpensesToday, summary.debtPaymentsToday)}
               </div>
             </div>
           </div>
           <div className="col-md-6 mb-3">
             <div className="p-3 bg-light rounded h-100">
               <h5>Gastos de la Semana</h5>
-              <div className="text-danger">
-                {renderSplitSummary(summary.cashExpensesThisWeek, summary.creditExpensesThisWeek)}
+              <div>
+                {renderSplitSummary(summary.cashExpensesThisWeek, summary.creditExpensesThisWeek, summary.debtPaymentsThisWeek)}
               </div>
             </div>
           </div>
