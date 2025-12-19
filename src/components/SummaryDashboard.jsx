@@ -137,13 +137,24 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
         const accountId = tx.accountId || tx.toAccountId;
         const account = accounts.find(a => a.id === accountId);
         const currency = account?.currency || 'MXN';
+        
         if (!acc[currency]) {
-            acc[currency] = { income: 0, expense: 0 };
+            acc[currency] = { income: 0, expenseCash: 0, expenseCredit: 0, debtPayment: 0 };
         }
+
         if (tx.type === 'income') {
             acc[currency].income += tx.amount;
-        } else if (tx.type !== 'internalTransfer' && tx.category !== 'Pago de Deuda') {
-            acc[currency].expense += tx.amount;
+        } else if (tx.type !== 'internalTransfer') {
+            if (tx.category === 'Pago de Deuda') {
+                acc[currency].debtPayment += tx.amount;
+            } else {
+                const isCredit = account?.type === 'Tarjeta de Crédito';
+                if (isCredit) {
+                    acc[currency].expenseCredit += tx.amount;
+                } else {
+                    acc[currency].expenseCash += tx.amount;
+                }
+            }
         }
         return acc;
     }, {});
@@ -233,25 +244,34 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
                 <h4 className="card-title">Reporte del {dateFilter.start} al {dateFilter.end}</h4>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowReportWindow(true)}>Ver en Nueva Ventana</button>
             </div>
-            {Object.keys(reportSummary).map(currency => (
+            {Object.keys(reportSummary).map(currency => {
+                const data = reportSummary[currency];
+                const totalExpense = data.expenseCash + data.expenseCredit + data.debtPayment;
+                return (
                 <div key={currency} className="mb-3 p-3 border rounded">
                     <h5 className="mb-3">Moneda: <span className="badge bg-info">{currency}</span></h5>
                     <div className="row text-center">
                         <div className="col-md-6">
                             <div className="p-2 bg-light rounded h-100">
                             <h5>Ingresos del Periodo</h5>
-                            <p className="fs-4 text-success fw-bold">{formatCurrency(reportSummary[currency].income, currency)}</p>
+                            <p className="fs-4 text-success fw-bold">{formatCurrency(data.income, currency)}</p>
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="p-2 bg-light rounded h-100">
-                            <h5>Gastos del Periodo</h5>
-                            <p className="fs-4 text-danger fw-bold">{formatCurrency(reportSummary[currency].expense, currency)}</p>
+                            <h5>Salidas Totales (Gastos + Pagos)</h5>
+                            <p className="fs-4 text-danger fw-bold">{formatCurrency(totalExpense, currency)}</p>
+                            <div className="text-muted small mt-2">
+                                <div>Consumo Efec: {formatCurrency(data.expenseCash, currency)}</div>
+                                <div>Consumo Créd: {formatCurrency(data.expenseCredit, currency)}</div>
+                                <div className="text-primary fw-bold">Pagos Deuda: {formatCurrency(data.debtPayment, currency)}</div>
+                            </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            ))}
+                );
+            })}
           </div>
         )}
 

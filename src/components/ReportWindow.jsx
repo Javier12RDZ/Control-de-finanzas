@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
-function ReportWindow({ closeWindow, transactions, reportSummary, dateFilter }) {
+function ReportWindow({ closeWindow, transactions, accounts, reportSummary, dateFilter }) {
   const newWindow = useRef(null);
   const [container, setContainer] = useState(null);
   const [filterCategory, setFilterCategory] = useState('');
@@ -36,18 +36,31 @@ function ReportWindow({ closeWindow, transactions, reportSummary, dateFilter }) 
   // 3. Recalcular el resumen basado en las transacciones filtradas
   const filteredSummary = useMemo(() => {
     return filteredTransactions.reduce((acc, tx) => {
-      const currency = tx.currency || 'MXN';
+      const accountId = tx.accountId || tx.toAccountId;
+      const account = accounts.find(a => a.id === accountId);
+      const currency = account?.currency || 'MXN';
+      
       if (!acc[currency]) {
-        acc[currency] = { income: 0, expense: 0 };
+        acc[currency] = { income: 0, expenseCash: 0, expenseCredit: 0, debtPayment: 0 };
       }
+
       if (tx.type === 'income') {
         acc[currency].income += tx.amount;
-      } else if (tx.type !== 'internalTransfer' && tx.category !== 'Pago de Deuda') {
-        acc[currency].expense += tx.amount;
+      } else if (tx.type !== 'internalTransfer') {
+         if (tx.category === 'Pago de Deuda') {
+            acc[currency].debtPayment += tx.amount;
+         } else {
+            const isCredit = account?.type === 'Tarjeta de Crédito';
+            if (isCredit) {
+                acc[currency].expenseCredit += tx.amount;
+            } else {
+                acc[currency].expenseCash += tx.amount;
+            }
+         }
       }
       return acc;
     }, {});
-  }, [filteredTransactions]);
+  }, [filteredTransactions, accounts]);
 
 
   useEffect(() => {
@@ -79,7 +92,7 @@ function ReportWindow({ closeWindow, transactions, reportSummary, dateFilter }) 
   const ReportContent = (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Reporte del {dateFilter.start} al {dateFilter.end}</h3>
+        <h3>Reporte del ${dateFilter.start} al ${dateFilter.end}</h3>
         <button className="btn btn-primary no-print" onClick={() => newWindow.current.print()}>Imprimir</button>
       </div>
 
@@ -118,29 +131,39 @@ function ReportWindow({ closeWindow, transactions, reportSummary, dateFilter }) 
       <div className="mb-4">
         <h4>Resumen del Periodo (Filtrado)</h4>
         {Object.keys(filteredSummary).length > 0 ? (
-            Object.keys(filteredSummary).map(currency => (
+            Object.keys(filteredSummary).map(currency => {
+                const data = filteredSummary[currency];
+                const totalOutflow = data.expenseCash + data.expenseCredit + data.debtPayment;
+                return (
                 <div key={currency} className="mb-3 p-3 border rounded shadow-sm">
                 <h5 className="mb-3">Moneda: <span className="badge bg-info">{currency}</span></h5>
                 <div className="row text-center">
                     <div className="col-md-6">
                     <div className="p-2 bg-white rounded border h-100">
                         <h6 className="text-muted">Ingresos</h6>
-                        <p className="fs-4 text-success fw-bold mb-0">{formatCurrency(filteredSummary[currency].income, currency)}</p>
+                        <p className="fs-4 text-success fw-bold mb-0">{formatCurrency(data.income, currency)}</p>
                     </div>
                     </div>
                     <div className="col-md-6">
                     <div className="p-2 bg-white rounded border h-100">
-                        <h6 className="text-muted">Gastos</h6>
-                        <p className="fs-4 text-danger fw-bold mb-0">{formatCurrency(filteredSummary[currency].expense, currency)}</p>
+                        <h6 className="text-muted">Salidas (Gastos + Pagos)</h6>
+                        <p className="fs-4 text-danger fw-bold mb-0">{formatCurrency(totalOutflow, currency)}</p>
+                        <div className="mt-2 text-start px-3" style={{ fontSize: '0.9em' }}>
+                            <div className="d-flex justify-content-between">
+                                <span>Consumo Efec:</span> <span>{formatCurrency(data.expenseCash, currency)}</span>
+                            </div>
+                            <div className="d-flex justify-content-between">
+                                <span>Consumo Créd:</span> <span>{formatCurrency(data.expenseCredit, currency)}</span>
+                            </div>
+                            <div className="d-flex justify-content-between text-primary fw-bold border-top mt-1 pt-1">
+                                <span>Pagos Deuda:</span> <span>{formatCurrency(data.debtPayment, currency)}</span>
+                            </div>
+                        </div>
                     </div>
                     </div>
                 </div>
                 </div>
-            ))
-        ) : (
-            <p className="text-muted fst-italic">No hay datos para el filtro seleccionado.</p>
-        )}
-      </div>
+            )})
 
       <h4>Detalle de Transacciones ({filteredTransactions.length})</h4>
       <div className="table-responsive">
