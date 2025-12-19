@@ -170,30 +170,17 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
       const cash = cashData[currency] || 0;
       const credit = creditData[currency] || 0;
       const debt = debtData[currency] || 0;
-      const totalConsumption = cash + credit;
+      const total = cash + credit + debt;
 
-      if (totalConsumption === 0 && debt === 0) return null;
+      if (total === 0) return null;
 
       return (
         <div key={currency} className="mb-2">
-          {/* Total Consumption */}
-          {totalConsumption > 0 && (
-            <>
-              <p className="fs-5 fw-bold mb-0 text-danger">{formatCurrency(totalConsumption, currency)}</p>
-              <small className="text-muted d-block" style={{ fontSize: '0.8em' }}>
-                Efec: {formatCurrency(cash, currency)} | Créd: {formatCurrency(credit, currency)}
-              </small>
-            </>
-          )}
-          
-          {/* Debt Payments (Separated) */}
-          {debt > 0 && (
-             <div className="mt-1">
-               <small className="text-primary fw-bold" style={{ fontSize: '0.85em' }}>
-                 Pagos Deuda: {formatCurrency(debt, currency)}
-               </small>
-             </div>
-          )}
+          {/* Total Sum (Cash + Credit + Debt Payments) */}
+          <p className="fs-5 fw-bold mb-0 text-danger">{formatCurrency(total, currency)}</p>
+          <small className="text-muted d-block" style={{ fontSize: '0.8em' }}>
+            Efec: {formatCurrency(cash, currency)} | Créd: {formatCurrency(credit, currency)} | Pagos: {formatCurrency(debt, currency)}
+          </small>
         </div>
       );
     });
