@@ -164,6 +164,10 @@ function ReportWindow({ closeWindow, transactions, accounts, reportSummary, date
                 </div>
                 </div>
             )})
+        ) : (
+            <p className="text-muted fst-italic">No hay datos para el filtro seleccionado.</p>
+        )}
+      </div>
 
       <h4>Detalle de Transacciones ({filteredTransactions.length})</h4>
       <div className="table-responsive">
