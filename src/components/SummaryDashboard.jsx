@@ -279,6 +279,7 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
           <ReportWindow
             closeWindow={() => setShowReportWindow(false)}
             transactions={transactions.filter(tx => tx.date >= dateFilter.start && tx.date <= dateFilter.end)}
+            accounts={accounts}
             reportSummary={reportSummary}
             dateFilter={dateFilter}
           />
