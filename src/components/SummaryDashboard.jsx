@@ -128,7 +128,7 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
         }
         if (tx.type === 'income') {
             acc[currency].income += tx.amount;
-        } else if (tx.type !== 'internalTransfer') {
+        } else if (tx.type !== 'internalTransfer' && tx.category !== 'Pago de Deuda') {
             acc[currency].expense += tx.amount;
         }
         return acc;
