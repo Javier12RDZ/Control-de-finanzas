@@ -16,8 +16,12 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     const initialSummary = {
       totalInAccounts: {},
       totalDebt: {},
-      expensesToday: {},
-      expensesThisWeek: {},
+      expensesToday: {}, // Kept for potential total sum display
+      cashExpensesToday: {},
+      creditExpensesToday: {},
+      expensesThisWeek: {}, // Kept for potential total sum display
+      cashExpensesThisWeek: {},
+      creditExpensesThisWeek: {},
       incomeThisWeek: {},
     };
 
@@ -60,15 +64,32 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
         summaryByCurrency[currency] = { totalInAccounts: 0, totalDebt: 0 };
       }
       if (!summaryByCurrency[currency].expensesToday) summaryByCurrency[currency].expensesToday = 0;
+      if (!summaryByCurrency[currency].cashExpensesToday) summaryByCurrency[currency].cashExpensesToday = 0;
+      if (!summaryByCurrency[currency].creditExpensesToday) summaryByCurrency[currency].creditExpensesToday = 0;
+
       if (!summaryByCurrency[currency].expensesThisWeek) summaryByCurrency[currency].expensesThisWeek = 0;
+      if (!summaryByCurrency[currency].cashExpensesThisWeek) summaryByCurrency[currency].cashExpensesThisWeek = 0;
+      if (!summaryByCurrency[currency].creditExpensesThisWeek) summaryByCurrency[currency].creditExpensesThisWeek = 0;
+
       if (!summaryByCurrency[currency].incomeThisWeek) summaryByCurrency[currency].incomeThisWeek = 0;
 
-      if (tx.type !== 'income' && tx.type !== 'internalTransfer') {
+      // Excluir 'Pago de Deuda' de los gastos de consumo
+      if (tx.type !== 'income' && tx.type !== 'internalTransfer' && tx.category !== 'Pago de Deuda') {
+        const isCredit = account.type === 'Tarjeta de Crédito';
+
         if (tx.date === today) {
-          summaryByCurrency[currency].expensesToday += tx.amount;
+          if (isCredit) {
+            summaryByCurrency[currency].creditExpensesToday += tx.amount;
+          } else {
+            summaryByCurrency[currency].cashExpensesToday += tx.amount;
+          }
         }
         if (tx.date >= firstDayStr) {
-          summaryByCurrency[currency].expensesThisWeek += tx.amount;
+          if (isCredit) {
+             summaryByCurrency[currency].creditExpensesThisWeek += tx.amount;
+          } else {
+             summaryByCurrency[currency].cashExpensesThisWeek += tx.amount;
+          }
         }
       } else if (tx.type === 'income') {
         if (tx.date >= firstDayStr) {
@@ -80,8 +101,14 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     Object.keys(summaryByCurrency).forEach(currency => {
       initialSummary.totalInAccounts[currency] = summaryByCurrency[currency].totalInAccounts;
       initialSummary.totalDebt[currency] = summaryByCurrency[currency].totalDebt;
-      initialSummary.expensesToday[currency] = summaryByCurrency[currency].expensesToday || 0;
-      initialSummary.expensesThisWeek[currency] = summaryByCurrency[currency].expensesThisWeek || 0;
+      
+      // Assign separated values
+      initialSummary.cashExpensesToday[currency] = summaryByCurrency[currency].cashExpensesToday || 0;
+      initialSummary.creditExpensesToday[currency] = summaryByCurrency[currency].creditExpensesToday || 0;
+      
+      initialSummary.cashExpensesThisWeek[currency] = summaryByCurrency[currency].cashExpensesThisWeek || 0;
+      initialSummary.creditExpensesThisWeek[currency] = summaryByCurrency[currency].creditExpensesThisWeek || 0;
+
       initialSummary.incomeThisWeek[currency] = summaryByCurrency[currency].incomeThisWeek || 0;
     });
 
@@ -121,6 +148,28 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
     });
   };
 
+  const renderSplitSummary = (cashData, creditData) => {
+    const currencies = new Set([...Object.keys(cashData), ...Object.keys(creditData)]);
+    if (currencies.size === 0) return <p className="fs-5 fw-bold mb-1">{formatCurrency(0)}</p>;
+
+    return Array.from(currencies).map(currency => {
+      const cash = cashData[currency] || 0;
+      const credit = creditData[currency] || 0;
+      const total = cash + credit;
+
+      if (total === 0) return null;
+
+      return (
+        <div key={currency} className="mb-2">
+          <p className="fs-5 fw-bold mb-0">{formatCurrency(total, currency)}</p>
+          <small className="text-muted" style={{ fontSize: '0.8em' }}>
+            Efec: {formatCurrency(cash, currency)} | Créd: {formatCurrency(credit, currency)}
+          </small>
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="card mb-4">
       <div className="card-body">
@@ -141,13 +190,17 @@ function SummaryDashboard({ transactions, accounts, dateFilter }) {
           <div className="col-md-4 mb-3">
             <div className="p-3 bg-light rounded h-100">
               <h5>Gastos de Hoy</h5>
-              <div className="text-danger">{renderSummary(summary.expensesToday)}</div>
+              <div className="text-danger">
+                {renderSplitSummary(summary.cashExpensesToday, summary.creditExpensesToday)}
+              </div>
             </div>
           </div>
           <div className="col-md-6 mb-3">
             <div className="p-3 bg-light rounded h-100">
               <h5>Gastos de la Semana</h5>
-              <div className="text-danger">{renderSummary(summary.expensesThisWeek)}</div>
+              <div className="text-danger">
+                {renderSplitSummary(summary.cashExpensesThisWeek, summary.creditExpensesThisWeek)}
+              </div>
             </div>
           </div>
           <div className="col-md-6 mb-3">

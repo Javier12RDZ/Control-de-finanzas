@@ -110,3 +110,30 @@ Aplicación web desarrollada con React (Vite) y Bootstrap para la gestión perso
     *   **Problema:** `XLSX.writeFile` no funciona correctamente en Android WebView.
     *   **Acción tomada:** Se instaló el plugin de Capacitor `@capacitor/filesystem` (`npm install @capacitor/filesystem`) para permitir guardar el archivo Excel directamente en el sistema de archivos del dispositivo Android (ej. carpeta `Documents`).
     *   **Estado:** La integración de `@capacitor/filesystem` en `BackupManager.jsx` para modificar la lógica de exportación está **pendiente**.
+    
+    ---
+    ## Sesión: 17 de Diciembre de 2025
+    
+    ### Mejoras en Reportes y Filtros
+    *   **Filtros Dinámicos en Reporte:** Se mejoró significativamente el componente `ReportWindow.jsx`.
+        *   Se añadieron filtros en tiempo real por **Descripción** (búsqueda de texto) y **Categoría** (menú desplegable).
+        *   El resumen de "Ingresos" y "Gastos" del periodo se actualiza automáticamente al aplicar los filtros.
+        *   Se mejoró la interfaz del reporte con una tarjeta de filtros y una tabla más responsiva y estilizada.
+    *   **Sincronización y Despliegue:**
+        *   Se sincronizaron los cambios del proyecto (incluyendo la configuración base de Capacitor para Android) en el repositorio de GitHub.
+        *   Se realizó un despliegue exitoso (`npm run deploy`) para actualizar la versión web en GitHub Pages.
+    
+    ### Próximos Pasos
+    *   Rediseñar la forma de registrar gastos (prioridad para la siguiente sesión).
+    *   Finalizar la exportación a Excel para Android usando `@capacitor/filesystem` (pendiente).
+
+---
+## Sesión: 18 de Diciembre de 2025
+
+### Separación de Gastos (Crédito vs Efectivo) y Corrección de Totales
+*   **Problema:** Se identificó una duplicidad en el cálculo de gastos. Los pagos a tarjetas de crédito ("Pago de Deuda") se sumaban como gastos, duplicando el consumo real (ya registrado al momento de la compra con tarjeta).
+*   **Solución en `SummaryDashboard`:**
+    *   **Lógica de Cálculo:** Se modificó para **excluir** explícitamente las transacciones con categoría `Pago de Deuda` de los totales de "Gastos de Hoy" y "Gastos de la Semana".
+    *   **Separación de Origen:** Se implementó una lógica para diferenciar gastos hechos con `Tarjeta de Crédito` vs `Efectivo/Débito`.
+    *   **Visualización:** El dashboard ahora muestra el gasto total real (consumo) y un desglose visual debajo: `Efec: $X | Créd: $Y`.
+    
